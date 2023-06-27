@@ -56,7 +56,7 @@ export class RolesService {
           .setTitle('Click on the emojis to take the role')
           .addFields(
             ...Object.entries(roles).map((field) => ({
-              name: `${field[1].name} - ${field[1].emoji}`,
+              name: `${field[1].emoji} - ${field[1].name}`,
               value: '\n',
             }))
           ),
