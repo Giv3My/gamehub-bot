@@ -3,6 +3,7 @@ import { Context, ContextOf, On } from 'necord';
 import {
   EmbedBuilder,
   Guild,
+  GuildBasedChannel,
   GuildMemberResolvable,
   MessageReaction,
   PartialMessageReaction,
@@ -90,7 +91,7 @@ export class RolesService {
 
   @On('messageReactionAdd')
   roleReactionAdd(@Context() [reaction, user]: ContextOf<'messageReactionAdd'>) {
-    if (user.bot) {
+    if (user.bot || (reaction.message.channel as GuildBasedChannel).name !== 'roles') {
       return;
     }
 
@@ -101,7 +102,7 @@ export class RolesService {
 
   @On('messageReactionRemove')
   roleReactionRemove(@Context() [reaction, user]: ContextOf<'messageReactionRemove'>) {
-    if (user.bot) {
+    if (user.bot || (reaction.message.channel as GuildBasedChannel).name !== 'roles') {
       return;
     }
 
