@@ -4,12 +4,18 @@ export enum ROLES {
   student = 'Student',
   gamer = 'Gamer',
   developer = 'Developer',
+  noname = 'Noname',
 }
 
 export enum EMOJIS {
   stud = 'stud',
   game = 'game',
   dev = 'dev',
+}
+
+export enum REACTION_EVENT {
+  add = 'add',
+  remove = 'remove',
 }
 
 export type RolesByReactionsType = {

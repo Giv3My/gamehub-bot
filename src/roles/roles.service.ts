@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Context, ContextOf, On } from 'necord';
+import { Context, ContextOf, On, SlashCommand, SlashCommandContext } from 'necord';
 import {
   EmbedBuilder,
   Guild,
@@ -12,14 +12,24 @@ import {
   User,
 } from 'discord.js';
 
-import { getRolesEmoji, findRole } from './utils';
+import { getRolesEmoji, findRole, fetchMember, getMemberRoles } from './utils';
 import { ROLE_BY_EMOJI } from './data';
 
 import { isEmoji } from './guards';
-import { RoleObject, ROLES, EMOJIS } from './types';
+import { RoleObject, ROLES, EMOJIS, REACTION_EVENT } from './types';
 
 @Injectable()
 export class RolesService {
+  @On('guildMemberAdd')
+  addInitialRole(@Context() [member]: ContextOf<'guildMemberAdd'>) {
+    if (member.user.bot) {
+      return;
+    }
+
+    const role = findRole(member.guild.roles, ROLES.noname);
+    member.roles.add(role);
+  }
+
   @On('ready')
   async generateRolesMessage(@Context() [interaction]: ContextOf<'ready'>) {
     const roles_emoji = getRolesEmoji(interaction.emojis, [
@@ -28,16 +38,18 @@ export class RolesService {
       EMOJIS.dev,
     ]);
 
-    const roles = Object.keys(ROLES).reduce(
-      (roles, role: keyof typeof ROLES, index) => ({
-        ...roles,
-        [role]: {
-          name: ROLES[role],
-          emoji: roles_emoji[index],
-        },
-      }),
-      {} as RoleObject
-    );
+    const roles = Object.keys(ROLES)
+      .filter((key: keyof typeof ROLES) => key !== 'noname')
+      .reduce(
+        (roles, role: keyof typeof ROLES, index) => ({
+          ...roles,
+          [role]: {
+            name: ROLES[role],
+            emoji: roles_emoji[index],
+          },
+        }),
+        {} as RoleObject
+      );
 
     const guild = interaction.guilds.cache.reduce((_, guild) => guild, {} as Guild);
     const rolesChannel = guild.channels.cache.find(
@@ -55,8 +67,8 @@ export class RolesService {
           .setColor('DarkPurple')
           .setTitle('Click on the emojis to take the role')
           .addFields(
-            ...Object.entries(roles).map((field) => ({
-              name: `${field[1].emoji} - ${field[1].name}`,
+            ...Object.values(roles).map((role) => ({
+              name: `${role.emoji} - ${role.name}`,
               value: '\n',
             }))
           ),
@@ -68,46 +80,62 @@ export class RolesService {
     });
   }
 
-  private toggleRole = (
+  private async toggleRole(
     reaction: MessageReaction | PartialMessageReaction,
     user: User | PartialUser,
     roleName: ROLES,
-    action: 'add' | 'remove'
-  ) => {
+    event: REACTION_EVENT
+  ) {
     const role = findRole(reaction.message.guild.roles, roleName);
 
-    if (action == 'add') {
-      reaction.message.guild.members.addRole({
+    if (event == REACTION_EVENT.add) {
+      await reaction.message.guild.members.addRole({
         role,
         user: user as GuildMemberResolvable,
       });
     } else {
-      reaction.message.guild.members.removeRole({
+      await reaction.message.guild.members.removeRole({
         role,
         user: user as GuildMemberResolvable,
       });
     }
-  };
+  }
 
-  @On('messageReactionAdd')
-  roleReactionAdd(@Context() [reaction, user]: ContextOf<'messageReactionAdd'>) {
+  private async handleReactionEvent(
+    reaction: MessageReaction | PartialMessageReaction,
+    user: User | PartialUser,
+    event: REACTION_EVENT
+  ) {
     if (user.bot || (reaction.message.channel as GuildBasedChannel).name !== 'roles') {
       return;
     }
 
     if (isEmoji(reaction.emoji.name)) {
-      this.toggleRole(reaction, user, ROLE_BY_EMOJI[reaction.emoji.name], 'add');
+      const member = await fetchMember(reaction.message.guild.members, user.id);
+      const userRoles = getMemberRoles(member);
+
+      if (userRoles.size === 1) {
+        await this.toggleRole(
+          reaction,
+          user,
+          ROLES.noname,
+          event === REACTION_EVENT.remove ? REACTION_EVENT.add : REACTION_EVENT.remove
+        );
+      }
+
+      await this.toggleRole(reaction, user, ROLE_BY_EMOJI[reaction.emoji.name], event);
     }
   }
 
-  @On('messageReactionRemove')
-  roleReactionRemove(@Context() [reaction, user]: ContextOf<'messageReactionRemove'>) {
-    if (user.bot || (reaction.message.channel as GuildBasedChannel).name !== 'roles') {
-      return;
-    }
+  @On('messageReactionAdd')
+  async roleReactionAdd(@Context() [reaction, user]: ContextOf<'messageReactionAdd'>) {
+    this.handleReactionEvent(reaction, user, REACTION_EVENT.add);
+  }
 
-    if (isEmoji(reaction.emoji.name)) {
-      this.toggleRole(reaction, user, ROLE_BY_EMOJI[reaction.emoji.name], 'remove');
-    }
+  @On('messageReactionRemove')
+  async roleReactionRemove(
+    @Context() [reaction, user]: ContextOf<'messageReactionRemove'>
+  ) {
+    this.handleReactionEvent(reaction, user, REACTION_EVENT.remove);
   }
 }

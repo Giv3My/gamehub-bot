@@ -16,6 +16,7 @@ import { GatewayModule } from './gateway/gateway.module';
           IntentsBitField.Flags.Guilds,
           IntentsBitField.Flags.GuildMessages,
           IntentsBitField.Flags.DirectMessages,
+          IntentsBitField.Flags.GuildMembers,
           IntentsBitField.Flags.GuildEmojisAndStickers,
           IntentsBitField.Flags.GuildMessageReactions,
         ],
