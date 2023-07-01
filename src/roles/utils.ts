@@ -1,7 +1,7 @@
 import {
   BaseGuildEmojiManager,
   GuildMember,
-  GuildMemberManager,
+  GuildMemberRoleManager,
   RoleManager,
 } from 'discord.js';
 
@@ -11,14 +11,18 @@ export const getRolesEmoji = (emojiManager: BaseGuildEmojiManager, emojis: EMOJI
   return emojis.map((emoji) => emojiManager.cache.find((item) => item.name === emoji));
 };
 
-export const findRole = (roles: RoleManager, roleName: ROLES) => {
-  return roles.cache.find((role) => role.name.split(' ')[1] === roleName);
+export const findRole = (
+  roles: RoleManager | GuildMemberRoleManager,
+  roleName: ROLES,
+  withEmoji?: boolean
+) => {
+  return roles.cache.find((role) => {
+    return (withEmoji ? role.name.split(' ')[1] : role.name) === roleName;
+  });
 };
 
-export const fetchMember = async (memberManager: GuildMemberManager, userId: string) => {
-  return (await memberManager.fetch()).find((member) => member.id === userId);
-};
-
-export const getMemberRoles = (member: GuildMember) => {
-  return member.roles.cache.filter((role) => !role.name.includes('everyone'));
+export const getMemberRoles = (member: GuildMember, excludeRoles: string[]) => {
+  return member.roles.cache.filter(
+    (role) => !['everyone'].some((roleName) => role.name.includes(roleName))
+  );
 };

@@ -1,18 +1,22 @@
 import { Injectable } from '@nestjs/common';
-import { Context, ContextOf, On, SlashCommand, SlashCommandContext } from 'necord';
+import { Context, ContextOf, On } from 'necord';
 import {
   EmbedBuilder,
   Guild,
   GuildBasedChannel,
+  GuildChannelManager,
   GuildMemberResolvable,
   MessageReaction,
   PartialMessageReaction,
   PartialUser,
+  RoleManager,
   TextBasedChannel,
   User,
 } from 'discord.js';
 
-import { getRolesEmoji, findRole, fetchMember, getMemberRoles } from './utils';
+import { findChannel, fetchMember } from 'src/gateway/utils';
+import { getRolesEmoji, findRole, getMemberRoles } from './utils';
+
 import { ROLE_BY_EMOJI } from './data';
 
 import { isEmoji } from './guards';
@@ -26,8 +30,26 @@ export class RolesService {
       return;
     }
 
-    const role = findRole(member.guild.roles, ROLES.noname);
+    const role = findRole(member.guild.roles, ROLES.noname, true);
     member.roles.add(role);
+  }
+
+  private async createRolesChannel(
+    channelManager: GuildChannelManager,
+    roleManager: RoleManager
+  ) {
+    const role = findRole(roleManager, '@everyone' as ROLES);
+
+    return channelManager.create({
+      name: 'roles',
+      position: 1,
+      permissionOverwrites: [
+        {
+          id: role.id,
+          deny: 'AddReactions',
+        },
+      ],
+    });
   }
 
   @On('ready')
@@ -52,9 +74,12 @@ export class RolesService {
       );
 
     const guild = interaction.guilds.cache.reduce((_, guild) => guild, {} as Guild);
-    const rolesChannel = guild.channels.cache.find(
-      (channel) => channel.name === 'roles'
-    ) as TextBasedChannel;
+    let rolesChannel = findChannel(guild.channels, 'roles') as TextBasedChannel;
+
+    if (!rolesChannel) {
+      rolesChannel = await this.createRolesChannel(guild.channels, guild.roles);
+    }
+
     const isChannelEmpty = (await rolesChannel.messages.fetch()).size === 0;
 
     if (!isChannelEmpty) {
@@ -86,7 +111,7 @@ export class RolesService {
     roleName: ROLES,
     event: REACTION_EVENT
   ) {
-    const role = findRole(reaction.message.guild.roles, roleName);
+    const role = findRole(reaction.message.guild.roles, roleName, true);
 
     if (event == REACTION_EVENT.add) {
       await reaction.message.guild.members.addRole({
@@ -112,9 +137,10 @@ export class RolesService {
 
     if (isEmoji(reaction.emoji.name)) {
       const member = await fetchMember(reaction.message.guild.members, user.id);
-      const userRoles = getMemberRoles(member);
+      const userRoles = getMemberRoles(member, ['everyone']);
+      const isMemberAdmin = findRole(member.roles, 'Admin' as ROLES, true);
 
-      if (userRoles.size === 1) {
+      if (userRoles.size === 1 && !isMemberAdmin) {
         await this.toggleRole(
           reaction,
           user,
