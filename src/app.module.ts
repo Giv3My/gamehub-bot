@@ -18,6 +18,7 @@ import { GatewayModule } from './gateway/gateway.module';
           IntentsBitField.Flags.GuildMembers,
           IntentsBitField.Flags.GuildEmojisAndStickers,
           IntentsBitField.Flags.GuildMessageReactions,
+          IntentsBitField.Flags.GuildVoiceStates,
         ],
       }),
     }),
