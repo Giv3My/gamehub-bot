@@ -23,6 +23,6 @@ export const findRole = (
 
 export const getMemberRoles = (member: GuildMember, excludeRoles: string[]) => {
   return member.roles.cache.filter(
-    (role) => !['everyone'].some((roleName) => role.name.includes(roleName))
+    (role) => !excludeRoles.some((roleName) => role.name.includes(roleName))
   );
 };

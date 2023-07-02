@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Context, ContextOf, Once, StringOption } from 'necord';
+import { Context, ContextOf, Once } from 'necord';
 import { Player } from 'discord-player';
 import { VoiceConnectionStatus } from '@discordjs/voice';
 
