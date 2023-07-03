@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { Context, ContextOf, On } from 'necord';
 import {
   EmbedBuilder,
-  Guild,
   GuildBasedChannel,
   GuildChannelManager,
   GuildMemberResolvable,
@@ -52,9 +51,9 @@ export class RolesService {
     });
   }
 
-  @On('ready')
-  async generateRolesMessage(@Context() [interaction]: ContextOf<'ready'>) {
-    const roles_emoji = getRolesEmoji(interaction.emojis, [
+  @On('guildCreate')
+  async generateRolesMessage(@Context() [guild]: ContextOf<'guildCreate'>) {
+    const roles_emoji = getRolesEmoji(guild.emojis, [
       EMOJIS.stud,
       EMOJIS.game,
       EMOJIS.dev,
@@ -73,7 +72,6 @@ export class RolesService {
         {} as RoleObject
       );
 
-    const guild = interaction.guilds.cache.reduce((_, guild) => guild, {} as Guild);
     let rolesChannel = findChannel(guild.channels, 'roles') as TextBasedChannel;
 
     if (!rolesChannel) {

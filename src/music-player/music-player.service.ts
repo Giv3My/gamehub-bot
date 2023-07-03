@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Context, ContextOf, Once } from 'necord';
+import { Context, ContextOf, On } from 'necord';
 import { Player } from 'discord-player';
 import { VoiceConnectionStatus } from '@discordjs/voice';
 
 @Injectable()
 export class MusicPlayerService {
-  @Once('ready')
+  @On('ready')
   onReady(@Context() [client]: ContextOf<'ready'>) {
     const player = new Player(client, {
       ytdlOptions: {

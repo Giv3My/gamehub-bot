@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { IntentsBitField } from 'discord.js';
+import { IntentsBitField, Partials } from 'discord.js';
 import { NecordModule } from 'necord';
 import { AppService } from './app.service';
 import { GatewayModule } from './gateway/gateway.module';
@@ -20,6 +20,7 @@ import { GatewayModule } from './gateway/gateway.module';
           IntentsBitField.Flags.GuildMessageReactions,
           IntentsBitField.Flags.GuildVoiceStates,
         ],
+        partials: [Partials.Channel, Partials.Message, Partials.Reaction],
       }),
     }),
     GatewayModule,
