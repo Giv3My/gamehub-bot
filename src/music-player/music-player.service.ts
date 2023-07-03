@@ -5,9 +5,9 @@ import { VoiceConnectionStatus } from '@discordjs/voice';
 
 @Injectable()
 export class MusicPlayerService {
-  @Once('ready')
-  onReady(@Context() [client]: ContextOf<'ready'>) {
-    const player = new Player(client, {
+  @Once('guildCreate')
+  onReady(@Context() [guild]: ContextOf<'guildCreate'>) {
+    const player = new Player(guild.client, {
       ytdlOptions: {
         quality: 'highestaudio',
         highWaterMark: 1 << 25,
