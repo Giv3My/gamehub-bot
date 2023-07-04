@@ -47,7 +47,7 @@ export class PlayForceCommand {
       });
     }
 
-    if (!queue.tracks) {
+    if (!queue.tracks.data.length) {
       return interaction.reply({
         content: 'There are **no tracks** to **force play**',
         ephemeral: true,
