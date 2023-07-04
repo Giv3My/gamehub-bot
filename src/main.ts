@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import ping from './ping';
 
 async function start() {
   const app = await NestFactory.create(AppModule);
@@ -8,3 +9,5 @@ async function start() {
 }
 
 start();
+
+setInterval(ping, 1000 * 60 * 10);

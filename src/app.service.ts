@@ -1,3 +1,4 @@
+import * as https from 'https';
 import { Injectable, Logger } from '@nestjs/common';
 import { Context, ContextOf, On, Once } from 'necord';
 
